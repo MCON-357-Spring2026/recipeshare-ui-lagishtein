@@ -1,21 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth, clearAuth, logout } from "@/lib/api";
 import Link from "next/link";
 
 export default function NavBar() {
-  const [auth, setAuth] = useState(null);
+  const [auth, setAuth] = useState(getAuth());
   const router = useRouter();
-
-  useEffect(() => {
-    setAuth(getAuth());
-  }, []);
 
   async function handleLogout() {
     if (auth) {
-      await logout(auth.username, auth.password).catch(() => {});
+      await logout().catch(() => {});
       clearAuth();
       setAuth(null);
       router.push("/");
