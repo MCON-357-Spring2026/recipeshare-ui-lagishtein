@@ -12,6 +12,7 @@ import Link from "@mui/material/Link";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [error, setError]       = useState("");
   const router = useRouter();
@@ -20,8 +21,8 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
     try {
-      await register(username, password);
-      router.push("/login");
+      await register(username, email, password);
+      router.push("/login");          // ← navigate to login after success
     } catch (err) {
       setError(err.message);
     }
@@ -39,10 +40,13 @@ export default function RegisterPage() {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <Box component="form" onSubmit={handleSubmit}
-             sx={{ display: "flex", flexDirection: "column", mt: 2, gap: 2 }}>
+             sx={{ display: "flex", flexDirection: "column", mt:2,  gap: 2 }}>
 
           <TextField label="Username" value={username} required fullWidth
                      onChange={(e) => setUsername(e.target.value)} />
+
+          <TextField label="Email" type="email" value={email} required fullWidth
+                     onChange={(e) => setEmail(e.target.value)} />
 
           <TextField label="Password" type="password" value={password} required fullWidth
                      onChange={(e) => setPassword(e.target.value)} />
@@ -61,4 +65,3 @@ export default function RegisterPage() {
     </main>
   );
 }
-
