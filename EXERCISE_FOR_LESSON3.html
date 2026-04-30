@@ -153,73 +153,90 @@ saveAuth(username, password, data.id);   // data.id is the user's numeric id</pr
     <pre>const BASE_URL = "";  // relative — proxied by Next.js to localhost:5000
 
 export function saveAuth(username, password, userId) {
+  if (typeof window === "undefined") return;
   localStorage.setItem("auth", JSON.stringify({ username, password, userId }));
 }
+
 export function getAuth() {
+  if (typeof window === "undefined") return null;
   const raw = localStorage.getItem("auth");
-  return raw ? JSON.parse(raw) : null;
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
-export function clearAuth() { localStorage.removeItem("auth"); }
+
+export function clearAuth() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("auth");
+}
 
 export async function fetchRecipes() {
-  const res = await fetch(`${BASE_URL}/api/recipes`);
-  if (!res.ok) throw new Error("Failed to load recipes");
-  return res.json();
+  const response = await fetch(`${BASE_URL}/api/recipes`);
+  if (!response.ok) throw new Error("Failed to load recipes");
+  return response.json();
 }
 
 export async function createRecipe(recipeData) {
-  const res = await fetch(`${BASE_URL}/api/recipes`, {
+  const response = await fetch(`${BASE_URL}/api/recipes`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(recipeData),
   });
-  if (!res.ok) {
-    const data = await res.json().catch(() =&gt; ({}));
-    throw new Error(data.error || `Server error ${res.status} – are you logged in?`);
+  if (!response.ok) {
+    const data = await response.json().catch(() =&gt; ({}));
+    throw new Error(data.error || `Server error ${response.status} - are you logged in?`);
   }
-  return res.json();
+  return response.json();
 }
 
 export async function updateRecipe(id, recipeData) {
-  const res = await fetch(`${BASE_URL}/api/recipes/${id}`, {
+  const response = await fetch(`${BASE_URL}/api/recipes/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(recipeData),
   });
-  if (!res.ok) {
-    const data = await res.json().catch(() =&gt; ({}));
-    throw new Error(data.error || `Server error ${res.status} – are you logged in?`);
+  if (!response.ok) {
+    const data = await response.json().catch(() =&gt; ({}));
+    throw new Error(data.error || `Server error ${response.status} - are you logged in?`);
   }
-  return res.json();
+  return response.json();
 }
 
 export async function deleteRecipe(id) {
-  const res = await fetch(`${BASE_URL}/api/recipes/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error(`Delete failed (${res.status})`);
+  const response = await fetch(`${BASE_URL}/api/recipes/${id}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) throw new Error(`Delete failed (${response.status})`);
 }
 
 export async function register(username, email, password) {
-  const res = await fetch(`${BASE_URL}/auth/register`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
+  const response = await fetch(`${BASE_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, email, password }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Registration failed");
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Registration failed");
   return data;
 }
 
 export async function login(username, password) {
-  const res = await fetch(`${BASE_URL}/auth/login`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
+  const response = await fetch(`${BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Login failed");
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Login failed");
   return data;
 }
 
 export async function logout() {
-  await fetch(`${BASE_URL}/auth/logout`, { method: "POST" });
+  await fetch(`${BASE_URL}/auth/logout`, {
+    method: "POST",
+  });
 }</pre>
   </section>
 
@@ -232,7 +249,7 @@ export async function logout() {
     <div class="filename">components/RecipeForm.jsx</div>
     <pre>"use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
@@ -243,11 +260,7 @@ import Typography from "@mui/material/Typography";
 const empty = { title: "", description: "", instructions: "", prep_time: "" };
 
 export default function RecipeForm({ initialData, onSave, onCancel }) {
-  const [formData, setFormData] = useState(empty);
-
-  useEffect(() =&gt; {
-    setFormData(initialData || empty);
-  }, [initialData]);
+  const [formData, setFormData] = useState(initialData || empty);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -263,7 +276,7 @@ export default function RecipeForm({ initialData, onSave, onCancel }) {
     &lt;Paper elevation={3} sx={{ maxWidth: 1100, mx: "auto", borderRadius: 3, overflow: "hidden" }}&gt;
       &lt;Box sx={{ px: 4, py: 3, background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)" }}&gt;
         &lt;Typography variant="h5" fontWeight={700} color="white"&gt;
-          {initialData ? "✏️ Edit Recipe" : "🍽️ New Recipe"}
+          {initialData ? "Edit Recipe" : "New Recipe"}
         &lt;/Typography&gt;
       &lt;/Box&gt;
 
@@ -328,7 +341,7 @@ export default function CreateRecipePage() {
 
   useEffect(() =&gt; {
     if (!getAuth()) router.push("/login");
-  }, []);
+  }, [router]);
 
   async function handleSave(formData) {
     setError("");
@@ -366,6 +379,7 @@ import { getAuth, fetchRecipes, updateRecipe } from "@/lib/api";
 import RecipeForm from "@/components/RecipeForm";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
 export default function EditRecipePage({ params }) {
   const { id } = use(params);   // ← unwrap Promise (Next.js 15)
@@ -375,11 +389,17 @@ export default function EditRecipePage({ params }) {
 
   useEffect(() =&gt; {
     if (!getAuth()) { router.push("/login"); return; }
-    fetchRecipes().then((list) =&gt; {
-      const found = list.find((r) =&gt; String(r.id) === String(id));
-      if (found) setRecipe(found);
-    });
-  }, [id]);
+    fetchRecipes()
+      .then((list) =&gt; {
+        const found = list.find((r) =&gt; String(r.id) === String(id));
+        if (found) {
+          setRecipe(found);
+        } else {
+          setError("Recipe not found.");
+        }
+      })
+      .catch((err) =&gt; setError(err.message));
+  }, [id, router]);
 
   async function handleSave(formData) {
     setError("");
@@ -391,13 +411,15 @@ export default function EditRecipePage({ params }) {
     }
   }
 
-  if (!recipe) return &lt;p&gt;Loading...&lt;/p&gt;;
+  if (!recipe && !error) return &lt;Typography sx={{ m: 4 }}&gt;Loading...&lt;/Typography&gt;;
 
   return (
     &lt;main&gt;
       &lt;Box sx={{ mt: 5, px: { xs: 2, sm: 4 } }}&gt;
-        {error &amp;&amp; &lt;Alert severity="error" sx={{ mb: 2, maxWidth: 780, mx: "auto" }}&gt;{error}&lt;/Alert&gt;}
-        &lt;RecipeForm initialData={recipe} onSave={handleSave} onCancel={() =&gt; router.push("/")} /&gt;
+        {error &amp;&amp; (
+          &lt;Alert severity="error" sx={{ mb: 2, maxWidth: 780, mx: "auto" }}&gt;{error}&lt;/Alert&gt;
+        )}
+        {recipe &amp;&amp; &lt;RecipeForm initialData={recipe} onSave={handleSave} onCancel={() =&gt; router.push("/")} /&gt;}
       &lt;/Box&gt;
     &lt;/main&gt;
   );
@@ -439,19 +461,23 @@ export default function RecipeDetailPage({ params }) {
   }, [id]);
 
   if (error) return &lt;Alert severity="error" sx={{ m: 4 }}&gt;{error}&lt;/Alert&gt;;
-  if (!recipe) return &lt;Typography sx={{ m: 4 }}&gt;Loading…&lt;/Typography&gt;;
+  if (!recipe) return &lt;Typography sx={{ m: 4 }}&gt;Loading...&lt;/Typography&gt;;
 
-  const isOwner = auth &amp;&amp; auth.userId === recipe.user_id;
+  const isOwner = auth &amp;&amp; Number(auth.userId) === Number(recipe.user_id);
 
   async function handleDelete() {
-    await deleteRecipe(recipe.id);
-    router.push("/");
+    try {
+      await deleteRecipe(recipe.id);
+      router.push("/");
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   return (
     &lt;main&gt;
       &lt;Box sx={{ maxWidth: 860, mx: "auto", mt: 5, px: { xs: 2, sm: 4 } }}&gt;
-        &lt;Button variant="text" onClick={() =&gt; router.push("/")} sx={{ mb: 2 }}&gt;← Back&lt;/Button&gt;
+        &lt;Button variant="text" onClick={() =&gt; router.push("/")} sx={{ mb: 2 }}&gt;Back&lt;/Button&gt;
 
         &lt;Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}&gt;
           &lt;Box sx={{ px: 4, py: 3, background: "linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%)" }}&gt;
@@ -462,7 +488,7 @@ export default function RecipeDetailPage({ params }) {
             &lt;/Box&gt;
             {recipe.prep_time &amp;&amp; (
               &lt;Typography variant="body2" sx={{ color: "rgba(255,255,255,0.8)", mt: 1 }}&gt;
-                ⏱ {recipe.prep_time} min prep
+                {recipe.prep_time} min prep
               &lt;/Typography&gt;
             )}
           &lt;/Box&gt;
@@ -520,7 +546,7 @@ import Button from "@mui/material/Button";
 export default function RecipeCard({ recipe, onDeleted }) {
   const router = useRouter();
   const auth = getAuth();
-  const isOwner = auth &amp;&amp; auth.userId === recipe.user_id;  // compare numeric IDs
+  const isOwner = auth &amp;&amp; Number(auth.userId) === Number(recipe.user_id);  // compare numeric IDs
 
   async function handleDelete() {
     await deleteRecipe(recipe.id);
@@ -546,7 +572,7 @@ export default function RecipeCard({ recipe, onDeleted }) {
 
         {recipe.prep_time &amp;&amp; (
           &lt;Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}&gt;
-            ⏱ {recipe.prep_time} min prep
+            {recipe.prep_time} min prep
           &lt;/Typography&gt;
         )}
 
@@ -645,7 +671,7 @@ export default function HomePage() {
       &lt;Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, sm: 4 }, py: 4, width: "100%" }}&gt;
         &lt;Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}&gt;
           &lt;Box&gt;
-            &lt;Typography variant="h4" fontWeight={700}&gt;🍽️ Recipes&lt;/Typography&gt;
+            &lt;Typography variant="h4" fontWeight={700}&gt;Recipes&lt;/Typography&gt;
             &lt;Typography variant="body2" color="text.secondary"&gt;
               {recipes.length &gt; 0 ? `${recipes.length} recipe${recipes.length !== 1 ? "s" : ""} shared` : ""}
             &lt;/Typography&gt;
@@ -659,7 +685,7 @@ export default function HomePage() {
         &lt;/Box&gt;
 
         {loading ? (
-          &lt;Typography color="text.secondary"&gt;Loading recipes…&lt;/Typography&gt;
+          &lt;Typography color="text.secondary"&gt;Loading recipes...&lt;/Typography&gt;
         ) : error ? (
           &lt;Alert severity="error"&gt;{error}&lt;/Alert&gt;
         ) : recipes.length === 0 ? (
@@ -705,19 +731,11 @@ export default function HomePage() {
     </ol>
   </section>
 
-  <!-- STRETCH -->
-  <section class="section">
-    <h2>Stretch goals</h2>
-    <div class="grid">
-      <div class="card"><h3>Loading states</h3><p>Disable the Save button while a request is in flight and show a spinner.</p></div>
-      <div class="card"><h3>Confirmation dialog</h3><p>Show an MUI <code>Dialog</code> asking "Are you sure?" before deleting.</p></div>
-      <div class="card"><h3>Search / filter</h3><p>Add a search bar on the home page that filters recipes by title client-side.</p></div>
-    </div>
-  </section>
 
-  <!-- TEACHER NOTES -->
+
+  <!-- NOTES -->
   <section class="section">
-    <h2>Teacher notes</h2>
+    <h2>Notes</h2>
     <details>
       <summary>Why a proxy instead of CORS headers?</summary>
       <p><code>credentials: "include"</code> requires <code>Access-Control-Allow-Origin</code> to be an exact origin (not <code>*</code>)
