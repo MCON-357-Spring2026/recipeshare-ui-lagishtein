@@ -1,4 +1,9 @@
-const BASE_URL = "";
+const publicBackendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+const BASE_URL = publicBackendUrl.replace(/\/$/, "");
+
+function buildUrl(path) {
+  return `${BASE_URL}${path}`;
+}
 
 // ─── Auth helpers (localStorage) ────────────────────────────────────────────
 
@@ -25,13 +30,13 @@ export function clearAuth() {
 // ─── Recipes ─────────────────────────────────────────────────────────────────
 
 export async function fetchRecipes() {
-  const response = await fetch(`${BASE_URL}/api/recipes`);
+  const response = await fetch(buildUrl("/api/recipes"));
   if (!response.ok) throw new Error("Failed to load recipes");
   return response.json();
 }
 
 export async function createRecipe(recipeData) {
-  const response = await fetch(`${BASE_URL}/api/recipes`, {
+  const response = await fetch(buildUrl("/api/recipes"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(recipeData),
@@ -44,7 +49,7 @@ export async function createRecipe(recipeData) {
 }
 
 export async function updateRecipe(id, recipeData) {
-  const response = await fetch(`${BASE_URL}/api/recipes/${id}`, {
+  const response = await fetch(buildUrl(`/api/recipes/${id}`), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(recipeData),
@@ -57,7 +62,7 @@ export async function updateRecipe(id, recipeData) {
 }
 
 export async function deleteRecipe(id) {
-  const response = await fetch(`${BASE_URL}/api/recipes/${id}`, {
+  const response = await fetch(buildUrl(`/api/recipes/${id}`), {
     method: "DELETE",
   });
   if (!response.ok) throw new Error(`Delete failed (${response.status})`);
@@ -66,7 +71,7 @@ export async function deleteRecipe(id) {
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export async function register(username, email, password) {
-  const response = await fetch(`${BASE_URL}/auth/register`, {
+  const response = await fetch(buildUrl("/auth/register"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, email, password }),
@@ -77,7 +82,7 @@ export async function register(username, email, password) {
 }
 
 export async function login(username, password) {
-  const response = await fetch(`${BASE_URL}/auth/login`, {
+  const response = await fetch(buildUrl("/auth/login"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
@@ -88,7 +93,7 @@ export async function login(username, password) {
 }
 
 export async function logout() {
-  await fetch(`${BASE_URL}/auth/logout`, {
+  await fetch(buildUrl("/auth/logout"), {
     method: "POST",
   });
 }
